@@ -1,9 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Gamepad2 } from "lucide-react";
+import { Gamepad2, Heart } from "lucide-react";
 import { Button } from "./ui/button";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 const Navbar = () => {
   const location = useLocation();
+  const { wishlistCount } = useWishlist();
   
   const isActive = (path: string) => location.pathname === path;
   
@@ -34,6 +36,21 @@ const Navbar = () => {
               }`}
             >
               Kontak
+            </Link>
+            <Link 
+              to="/wishlist" 
+              className="relative transition-smooth hover:scale-110"
+            >
+              <Heart 
+                className={`h-6 w-6 ${
+                  isActive("/wishlist") ? "fill-destructive text-destructive" : "text-foreground hover:text-primary"
+                }`}
+              />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
             <Button variant="hero" size="sm">
               Login
