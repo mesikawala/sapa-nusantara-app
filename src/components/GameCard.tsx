@@ -27,44 +27,45 @@ const GameCard = ({ id, title, price, image, rating, genre }: GameCardProps) => 
   };
 
   return (
-    <div className="group gradient-card rounded-lg overflow-hidden shadow-card transition-smooth hover:scale-105 hover:glow-primary border border-border">
+    <div className="group gradient-card rounded-md overflow-hidden shadow-card transition-smooth hover:scale-105 hover:glow-primary border border-border">
       <div className="relative overflow-hidden aspect-square">
         <img 
           src={image} 
           alt={title}
           className="w-full h-full object-cover transition-smooth group-hover:scale-110"
         />
-        <div className="absolute top-3 right-3 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-bold">
+        <div className="absolute top-1.5 right-1.5 bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold">
           {price}
         </div>
         <button
           onClick={handleWishlistClick}
-          className="absolute top-3 left-3 p-2 rounded-full bg-card/80 backdrop-blur-sm border border-border transition-smooth hover:scale-110"
+          className="absolute top-1.5 left-1.5 p-1 md:p-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border transition-smooth hover:scale-110"
         >
           <Heart 
-            className={`h-5 w-5 transition-smooth ${
+            className={`h-3 w-3 md:h-4 md:w-4 transition-smooth ${
               inWishlist ? "fill-destructive text-destructive" : "text-foreground"
             }`}
           />
         </button>
       </div>
       
-      <div className="p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-muted-foreground uppercase tracking-wider">{genre}</span>
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-secondary text-secondary" />
-            <span className="text-sm font-semibold">{rating}</span>
+      <div className="p-2 md:p-3">
+        <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+          <span className="text-[8px] md:text-xs text-muted-foreground uppercase tracking-wider truncate">{genre}</span>
+          <div className="flex items-center gap-0.5 md:gap-1 shrink-0">
+            <Star className="h-2.5 w-2.5 md:h-3 md:w-3 fill-secondary text-secondary" />
+            <span className="text-[10px] md:text-xs font-semibold">{rating}</span>
           </div>
         </div>
         
-        <h3 className="text-lg font-bold mb-3 text-foreground group-hover:text-primary transition-smooth">
+        <h3 className="text-xs md:text-sm font-bold mb-2 text-foreground group-hover:text-primary transition-smooth line-clamp-2">
           {title}
         </h3>
         
-        <Button variant="hero" size="sm" className="w-full">
-          <ShoppingCart className="h-4 w-4" />
-          Beli Sekarang
+        <Button variant="hero" size="sm" className="w-full h-7 md:h-8 text-[10px] md:text-xs px-2">
+          <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
+          <span className="hidden md:inline">Beli Sekarang</span>
+          <span className="md:hidden">Beli</span>
         </Button>
       </div>
     </div>
