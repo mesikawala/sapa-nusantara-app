@@ -1,9 +1,29 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import GameCard from "@/components/GameCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Play, Zap, Shield, Headphones } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import heroBanner from "@/assets/hero-banner.jpg";
+
+interface Game {
+  id: string;
+  title: string;
+  slug: string;
+  price: string;
+  image_url: string;
+  rating: number;
+  genre: string;
+  category_id: string | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 import godOfWar from "@/assets/god-of-war.jpg";
 import residentEvil4 from "@/assets/resident-evil-4.jpg";
 import cyberpunk from "@/assets/cyberpunk.jpg";
@@ -26,7 +46,45 @@ import halo from "@/assets/halo.jpg";
 import witcher3 from "@/assets/witcher3.jpg";
 
 const Index = () => {
-  const games = [
+  const [games, setGames] = useState<Game[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadGames();
+    loadCategories();
+  }, [selectedCategory]);
+
+  const loadGames = async () => {
+    let query = supabase
+      .from("games")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (selectedCategory !== "all") {
+      query = query.eq("category_id", selectedCategory);
+    }
+
+    const { data } = await query;
+    if (data) {
+      setGames(data);
+    }
+    setLoading(false);
+  };
+
+  const loadCategories = async () => {
+    const { data } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name");
+    
+    if (data) {
+      setCategories(data);
+    }
+  };
+
+  const staticGames = [
     {
       id: "god-of-war",
       title: "God of War",
@@ -267,11 +325,42 @@ const Index = () => {
             Koleksi game terbaik dan terpopuler tahun ini
           </p>
         </div>
+
+        <div className="mb-6 flex justify-center">
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="Pilih Kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Game</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         
         <div className="grid grid-cols-4 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
-          {games.map((game) => (
-            <GameCard key={game.id} {...game} />
-          ))}
+          {loading ? (
+            <div className="col-span-full text-center py-12">Loading...</div>
+          ) : games.length === 0 ? (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground">Belum ada game di kategori ini</p>
+            </div>
+          ) : (
+            games.map((game) => (
+              <GameCard 
+                key={game.id} 
+                id={game.id}
+                title={game.title}
+                price={game.price}
+                image={game.image_url}
+                rating={game.rating}
+                genre={game.genre}
+                slug={game.slug}
+              />
+            ))
+          )}
         </div>
       </section>
 

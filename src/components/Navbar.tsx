@@ -1,14 +1,57 @@
-import { Link, useLocation } from "react-router-dom";
-import { Gamepad2, Heart } from "lucide-react";
-import { Button } from "./ui/button";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Gamepad2, Heart, LogOut, Shield } from "lucide-react";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { Button } from "./ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const { wishlistCount } = useWishlist();
-  
+  const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        checkAdmin(session.user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      if (session?.user) {
+        checkAdmin(session.user.id);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAdmin = async (userId: string) => {
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    
+    setIsAdmin(!!data);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Logout berhasil");
+    navigate("/");
+  };
+
   const isActive = (path: string) => location.pathname === path;
-  
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 gradient-hero border-b border-border backdrop-blur-sm">
       <div className="container mx-auto px-4">
@@ -52,9 +95,28 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
-            <Button variant="hero" size="sm">
-              Login
-            </Button>
+
+            {isAdmin && (
+              <Link 
+                to="/admin"
+                className={`transition-smooth hover:text-primary ${
+                  isActive("/admin") ? "text-primary font-semibold" : "text-foreground"
+                }`}
+              >
+                <Shield className="h-6 w-6" />
+              </Link>
+            )}
+
+            {user ? (
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="h-5 w-5" />
+                <span className="hidden md:inline ml-2">Logout</span>
+              </Button>
+            ) : (
+              <Button variant="hero" size="sm" onClick={() => navigate("/auth")}>
+                Login
+              </Button>
+            )}
           </div>
         </div>
       </div>

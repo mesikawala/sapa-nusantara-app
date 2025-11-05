@@ -2,6 +2,7 @@ import { Button } from "./ui/button";
 import { ShoppingCart, Star, Heart } from "lucide-react";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface GameCardProps {
   id: string;
@@ -10,9 +11,11 @@ interface GameCardProps {
   image: string;
   rating: number;
   genre: string;
+  slug?: string;
 }
 
-const GameCard = ({ id, title, price, image, rating, genre }: GameCardProps) => {
+const GameCard = ({ id, title, price, image, rating, genre, slug }: GameCardProps) => {
+  const navigate = useNavigate();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const inWishlist = isInWishlist(id);
 
@@ -28,7 +31,10 @@ const GameCard = ({ id, title, price, image, rating, genre }: GameCardProps) => 
 
   return (
     <div className="group gradient-card rounded-md overflow-hidden shadow-card transition-smooth hover:scale-105 hover:glow-primary border border-border">
-      <div className="relative overflow-hidden aspect-square">
+      <div 
+        className="relative overflow-hidden aspect-square cursor-pointer"
+        onClick={() => slug && navigate(`/game/${slug}`)}
+      >
         <img 
           src={image} 
           alt={title}
@@ -58,7 +64,10 @@ const GameCard = ({ id, title, price, image, rating, genre }: GameCardProps) => 
           </div>
         </div>
         
-        <h3 className="text-xs md:text-sm font-bold mb-2 text-foreground group-hover:text-primary transition-smooth line-clamp-2">
+        <h3 
+          className="text-xs md:text-sm font-bold mb-2 text-foreground group-hover:text-primary transition-smooth line-clamp-2 cursor-pointer"
+          onClick={() => slug && navigate(`/game/${slug}`)}
+        >
           {title}
         </h3>
         
