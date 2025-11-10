@@ -55,28 +55,37 @@ const Admin = () => {
   }, []);
 
   const checkAdmin = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      navigate("/auth");
-      return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        setIsAdmin(false);
+        toast.error("Silakan login terlebih dahulu");
+        navigate("/auth");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Gagal memeriksa role:", error);
+      }
+
+      const hasAdmin = !!data;
+      setIsAdmin(hasAdmin);
+
+      if (!hasAdmin) {
+        toast.error("Anda tidak memiliki akses admin");
+        navigate("/");
+      }
+    } finally {
+      setLoading(false);
     }
-
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", session.user.id)
-      .eq("role", "admin")
-      .maybeSingle();
-
-    if (!data) {
-      toast.error("Anda tidak memiliki akses admin");
-      navigate("/");
-      return;
-    }
-
-    setIsAdmin(true);
-    setLoading(false);
   };
 
   const loadCategories = async () => {
@@ -205,11 +214,28 @@ const Admin = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">Loading...</main>
+        <Footer />
+      </div>
+    );
   }
 
   if (!isAdmin) {
-    return null;
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Akses ditolak</h1>
+            <p className="text-muted-foreground">Anda tidak memiliki akses ke halaman ini.</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (
