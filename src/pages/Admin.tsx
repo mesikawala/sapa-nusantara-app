@@ -408,16 +408,15 @@ const Admin = () => {
                   />
                 </div>
                 <div>
-                  <Label>Kategori</Label>
+                  <Label>Kategori (opsional)</Label>
                   <Select
-                    value={gameForm.category_id}
-                    onValueChange={(value) => setGameForm({ ...gameForm, category_id: value })}
+                    value={gameForm.category_id || undefined}
+                    onValueChange={(value) => setGameForm({ ...gameForm, category_id: value || "" })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Pilih kategori" />
+                      <SelectValue placeholder="Pilih kategori atau kosongkan" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Tidak ada kategori</SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                       ))}
