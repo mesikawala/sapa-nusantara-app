@@ -47,6 +47,8 @@ const Admin = () => {
     category_id: "",
   });
   const [editingGame, setEditingGame] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   useEffect(() => {
     checkAdmin();
@@ -135,11 +137,51 @@ const Admin = () => {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('game-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        toast.error("Gagal upload gambar");
+        return null;
+      }
+
+      const { data } = supabase.storage
+        .from('game-images')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat upload gambar");
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleGameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    let imageUrl = gameForm.image_url;
+    
+    // Upload image if a new file is selected
+    if (selectedImage) {
+      const uploadedUrl = await handleImageUpload(selectedImage);
+      if (!uploadedUrl) return;
+      imageUrl = uploadedUrl;
+    }
+
     const slug = gameForm.title.toLowerCase().replace(/\s+/g, "-");
     const gameData = {
       ...gameForm,
+      image_url: imageUrl,
       slug,
       rating: parseFloat(gameForm.rating),
       category_id: gameForm.category_id || null,
@@ -211,6 +253,7 @@ const Admin = () => {
       category_id: "",
     });
     setEditingGame(null);
+    setSelectedImage(null);
   };
 
   if (loading) {
@@ -301,7 +344,8 @@ const Admin = () => {
                   <Textarea
                     value={gameForm.description}
                     onChange={(e) => setGameForm({ ...gameForm, description: e.target.value })}
-                    rows={3}
+                    rows={6}
+                    placeholder="Masukkan deskripsi lengkap game..."
                   />
                 </div>
                 <div>
@@ -314,12 +358,33 @@ const Admin = () => {
                   />
                 </div>
                 <div>
-                  <Label>URL Gambar</Label>
+                  <Label>Upload Gambar Pamflet</Label>
                   <Input
-                    value={gameForm.image_url}
-                    onChange={(e) => setGameForm({ ...gameForm, image_url: e.target.value })}
-                    required
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSelectedImage(file);
+                        // Preview the image
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setGameForm({ ...gameForm, image_url: reader.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    disabled={uploadingImage}
                   />
+                  {gameForm.image_url && (
+                    <div className="mt-2">
+                      <img 
+                        src={gameForm.image_url} 
+                        alt="Preview" 
+                        className="w-32 h-32 object-cover rounded"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <Label>Rating (0-5)</Label>
@@ -360,8 +425,8 @@ const Admin = () => {
                   </Select>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit" variant="hero">
-                    {editingGame ? "Update Game" : "Tambah Game"}
+                  <Button type="submit" variant="hero" disabled={uploadingImage}>
+                    {uploadingImage ? "Mengupload..." : editingGame ? "Update Game" : "Tambah Game"}
                   </Button>
                   {editingGame && (
                     <Button type="button" variant="outline" onClick={resetGameForm}>
