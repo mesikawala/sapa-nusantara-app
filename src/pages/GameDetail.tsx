@@ -7,6 +7,8 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { calculateDiscount } from "@/lib/priceUtils";
+import { Badge } from "@/components/ui/badge";
 
 interface Game {
   id: string;
@@ -32,7 +34,20 @@ const GameDetail = () => {
   const [game, setGame] = useState<Game | null>(null);
   const [gameMedia, setGameMedia] = useState<GameMedia[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     loadGame();
@@ -95,6 +110,7 @@ const GameDetail = () => {
   if (!game) return null;
 
   const inWishlist = isInWishlist(game.id);
+  const discountedPrices = isLoggedIn ? calculateDiscount(game.price, 20) : null;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -131,7 +147,29 @@ const GameDetail = () => {
               </div>
             </div>
 
-            <div className="text-3xl font-bold text-primary">{game.price}</div>
+            <div className="space-y-2">
+              {isLoggedIn && discountedPrices ? (
+                <>
+                  <Badge variant="secondary" className="text-sm px-3 py-1">
+                    🎉 Diskon Member 20%
+                  </Badge>
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-2xl font-bold line-through text-muted-foreground">{game.price}</span>
+                    <span className="text-4xl font-bold text-primary">{discountedPrices.discounted}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Hemat {discountedPrices.savings}!
+                  </p>
+                </>
+              ) : (
+                <div className="text-3xl font-bold text-primary">{game.price}</div>
+              )}
+              {!isLoggedIn && (
+                <p className="text-sm text-muted-foreground">
+                  Login untuk mendapatkan diskon 20%!
+                </p>
+              )}
+            </div>
 
             <div className="prose prose-invert max-w-none">
               <p className="text-muted-foreground leading-relaxed">

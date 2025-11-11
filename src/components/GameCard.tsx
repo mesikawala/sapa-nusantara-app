@@ -3,6 +3,9 @@ import { ShoppingCart, Star, Heart } from "lucide-react";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { calculateDiscount } from "@/lib/priceUtils";
 
 interface GameCardProps {
   id: string;
@@ -18,6 +21,21 @@ const GameCard = ({ id, title, price, image, rating, genre, slug }: GameCardProp
   const navigate = useNavigate();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const inWishlist = isInWishlist(id);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsLoggedIn(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsLoggedIn(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const discountedPrices = isLoggedIn ? calculateDiscount(price, 20) : null;
 
   const handleWishlistClick = () => {
     if (inWishlist) {
@@ -41,10 +59,20 @@ const GameCard = ({ id, title, price, image, rating, genre, slug }: GameCardProp
           className="w-full h-full object-cover transition-smooth group-hover:scale-110"
         />
         <div className="absolute top-1.5 right-1.5 bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold">
-          {price}
+          {isLoggedIn && discountedPrices ? (
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="line-through text-[8px] md:text-[10px] opacity-70">{price}</span>
+              <span className="text-[10px] md:text-xs">{discountedPrices.discounted}</span>
+            </div>
+          ) : (
+            <span>{price}</span>
+          )}
         </div>
         <button
-          onClick={handleWishlistClick}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleWishlistClick();
+          }}
           className="absolute top-1.5 left-1.5 p-1 md:p-1.5 rounded-full bg-card/80 backdrop-blur-sm border border-border transition-smooth hover:scale-110"
         >
           <Heart 
