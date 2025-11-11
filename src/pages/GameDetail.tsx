@@ -19,10 +19,18 @@ interface Game {
   categories?: { name: string };
 }
 
+interface GameMedia {
+  id: string;
+  media_type: 'image' | 'video';
+  media_url: string;
+  display_order: number;
+}
+
 const GameDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [game, setGame] = useState<Game | null>(null);
+  const [gameMedia, setGameMedia] = useState<GameMedia[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
@@ -44,7 +52,17 @@ const GameDetail = () => {
     }
 
     setGame(data);
+    loadGameMedia(data.id);
     setLoading(false);
+  };
+
+  const loadGameMedia = async (gameId: string) => {
+    const { data } = await supabase
+      .from('game_media')
+      .select('*')
+      .eq('game_id', gameId)
+      .order('display_order');
+    if (data) setGameMedia(data as GameMedia[]);
   };
 
   const handleWishlistClick = () => {
@@ -120,6 +138,31 @@ const GameDetail = () => {
                 {game.description || "Tidak ada deskripsi tersedia untuk game ini."}
               </p>
             </div>
+
+            {gameMedia.length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold mb-3">Galeri Game:</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {gameMedia.map((media) => (
+                    <div key={media.id} className="aspect-video rounded-lg overflow-hidden shadow-lg">
+                      {media.media_type === 'image' ? (
+                        <img 
+                          src={media.media_url} 
+                          alt="Screenshot game" 
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <video 
+                          src={media.media_url} 
+                          controls
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-4">
               <Button variant="hero" size="lg" className="flex-1">

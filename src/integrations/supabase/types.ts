@@ -35,6 +35,41 @@ export type Database = {
         }
         Relationships: []
       }
+      game_media: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          game_id: string
+          id: string
+          media_type: string
+          media_url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          game_id: string
+          id?: string
+          media_type: string
+          media_url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          game_id?: string
+          id?: string
+          media_type?: string
+          media_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_media_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           category_id: string | null
