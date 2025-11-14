@@ -13,6 +13,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -75,6 +76,27 @@ const Auth = () => {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Gagal login dengan Google");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/10 p-4">
       <Card className="w-full max-w-md gradient-card">
@@ -113,9 +135,14 @@ const Auth = () => {
                     required
                   />
                 </div>
-                <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-                  {loading ? "Memproses..." : "Login"}
-                </Button>
+                <div className="space-y-2">
+                  <Button type="submit" variant="hero" className="w-full" disabled={loading || googleLoading}>
+                    {loading ? "Memproses..." : "Login"}
+                  </Button>
+                  <Button type="button" variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={googleLoading || loading}>
+                    {googleLoading ? "Menghubungkan..." : "Masuk dengan Google"}
+                  </Button>
+                </div>
               </form>
             </TabsContent>
             
