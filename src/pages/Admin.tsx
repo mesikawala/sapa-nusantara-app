@@ -30,6 +30,14 @@ interface Game {
   categories?: { name: string };
 }
 
+interface GameMedia {
+  id: string;
+  game_id: string;
+  media_type: 'image' | 'video';
+  media_url: string;
+  display_order: number;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -49,6 +57,9 @@ const Admin = () => {
   const [editingGame, setEditingGame] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [additionalMedia, setAdditionalMedia] = useState<File[]>([]);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [existingMedia, setExistingMedia] = useState<GameMedia[]>([]);
 
   useEffect(() => {
     checkAdmin();
@@ -166,6 +177,78 @@ const Admin = () => {
     }
   };
 
+  const handleMediaUpload = async (files: File[], gameId: string) => {
+    setUploadingMedia(true);
+    try {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        // Determine media type
+        const mediaType = ['mp4', 'webm', 'mov', 'avi'].includes(fileExt || '') ? 'video' : 'image';
+
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('game-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          toast.error(`Gagal upload ${file.name}`);
+          continue;
+        }
+
+        const { data } = supabase.storage
+          .from('game-images')
+          .getPublicUrl(filePath);
+
+        // Save to game_media table
+        const { error: dbError } = await supabase
+          .from('game_media')
+          .insert({
+            game_id: gameId,
+            media_type: mediaType,
+            media_url: data.publicUrl,
+            display_order: i
+          });
+
+        if (dbError) {
+          toast.error(`Gagal menyimpan ${file.name} ke database`);
+        }
+      }
+      toast.success("Media berhasil diupload");
+      loadExistingMedia(gameId);
+    } catch (error) {
+      toast.error("Terjadi kesalahan saat upload media");
+    } finally {
+      setUploadingMedia(false);
+    }
+  };
+
+  const loadExistingMedia = async (gameId: string) => {
+    const { data } = await supabase
+      .from('game_media')
+      .select('*')
+      .eq('game_id', gameId)
+      .order('display_order');
+    if (data) setExistingMedia(data as GameMedia[]);
+  };
+
+  const handleDeleteMedia = async (mediaId: string) => {
+    const { error } = await supabase
+      .from('game_media')
+      .delete()
+      .eq('id', mediaId);
+
+    if (error) {
+      toast.error("Gagal menghapus media");
+    } else {
+      toast.success("Media berhasil dihapus");
+      setExistingMedia(existingMedia.filter(m => m.id !== mediaId));
+    }
+  };
+
   const handleGameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -196,18 +279,30 @@ const Admin = () => {
       if (error) {
         toast.error("Gagal mengupdate game");
       } else {
+        // Upload additional media if any
+        if (additionalMedia.length > 0) {
+          await handleMediaUpload(additionalMedia, editingGame);
+          setAdditionalMedia([]);
+        }
         toast.success("Game berhasil diupdate");
         resetGameForm();
         loadGames();
       }
     } else {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("games")
-        .insert(gameData);
+        .insert(gameData)
+        .select()
+        .single();
 
       if (error) {
         toast.error("Gagal menambah game");
       } else {
+        // Upload additional media if any
+        if (additionalMedia.length > 0 && data) {
+          await handleMediaUpload(additionalMedia, data.id);
+          setAdditionalMedia([]);
+        }
         toast.success("Game berhasil ditambahkan");
         resetGameForm();
         loadGames();
@@ -226,6 +321,7 @@ const Admin = () => {
       category_id: game.category_id || "",
     });
     setEditingGame(game.id);
+    loadExistingMedia(game.id);
   };
 
   const handleDeleteGame = async (id: string) => {
@@ -254,6 +350,8 @@ const Admin = () => {
     });
     setEditingGame(null);
     setSelectedImage(null);
+    setAdditionalMedia([]);
+    setExistingMedia([]);
   };
 
   if (loading) {
@@ -423,9 +521,61 @@ const Admin = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label>Foto & Video Tambahan</Label>
+                  <Input
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setAdditionalMedia(files);
+                    }}
+                    disabled={uploadingMedia}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Upload foto (JPG, PNG) atau video (MP4, WebM) untuk ditampilkan di halaman detail game
+                  </p>
+                  {additionalMedia.length > 0 && (
+                    <div className="mt-2 text-sm text-muted-foreground">
+                      {additionalMedia.length} file dipilih
+                    </div>
+                  )}
+                </div>
+                {existingMedia.length > 0 && (
+                  <div>
+                    <Label>Media yang Ada</Label>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
+                      {existingMedia.map((media) => (
+                        <div key={media.id} className="relative group">
+                          {media.media_type === 'image' ? (
+                            <img 
+                              src={media.media_url} 
+                              alt="Game media" 
+                              className="w-full h-24 object-cover rounded"
+                            />
+                          ) : (
+                            <video 
+                              src={media.media_url} 
+                              className="w-full h-24 object-cover rounded"
+                            />
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteMedia(media.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex gap-2">
-                  <Button type="submit" variant="hero" disabled={uploadingImage}>
-                    {uploadingImage ? "Mengupload..." : editingGame ? "Update Game" : "Tambah Game"}
+                  <Button type="submit" variant="hero" disabled={uploadingImage || uploadingMedia}>
+                    {uploadingImage || uploadingMedia ? "Mengupload..." : editingGame ? "Update Game" : "Tambah Game"}
                   </Button>
                   {editingGame && (
                     <Button type="button" variant="outline" onClick={resetGameForm}>

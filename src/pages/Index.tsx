@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import GameCard from "@/components/GameCard";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import DiscountBanner from "@/components/DiscountBanner";
 import { Play, Zap, Shield, Headphones } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import heroBanner from "@/assets/hero-banner.jpg";
@@ -314,6 +315,9 @@ const Index = () => {
           ))}
         </div>
       </section>
+
+      {/* Discount Banner Carousel */}
+      <DiscountBanner />
 
       {/* Games Section */}
       <section className="py-20 container mx-auto px-4">
