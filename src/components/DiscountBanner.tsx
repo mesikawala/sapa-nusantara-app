@@ -24,19 +24,32 @@ const DiscountBanner = () => {
   }, []);
 
   const loadFeaturedGames = async () => {
-    const { data, error } = await supabase
-      .from("games")
-      .select("id, title, slug, price, image_url, genre")
-      .eq("is_featured", true)
-      .order("featured_order", { ascending: true, nullsFirst: false });
+    try {
+      const { data, error } = await supabase
+        .from("games")
+        .select("id, title, slug, price, image_url, genre")
+        .eq("is_featured", true)
+        .order("featured_order", { ascending: true, nullsFirst: false });
 
-    if (error) {
-      console.error("Error loading featured games:", error);
-      return;
-    }
+      if (error) {
+        // Jika kolom belum ada, skip error dan return empty array
+        if (error.code === '42703' || error.message?.includes('does not exist') || error.message?.includes('column')) {
+          console.warn("Kolom is_featured atau featured_order belum ada. Pastikan sudah menjalankan migration SQL.");
+          setFeaturedGames([]);
+          return;
+        }
+        console.error("Error loading featured games:", error);
+        return;
+      }
 
-    if (data && data.length > 0) {
-      setFeaturedGames(data as BannerGame[]);
+      if (data && data.length > 0) {
+        setFeaturedGames(data as BannerGame[]);
+      } else {
+        setFeaturedGames([]);
+      }
+    } catch (err) {
+      console.error("Unexpected error loading featured games:", err);
+      setFeaturedGames([]);
     }
   };
 
