@@ -203,7 +203,12 @@ const GameDetail = () => {
             )}
 
             <div className="flex gap-4">
-              <Button variant="hero" size="lg" className="flex-1">
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="flex-1"
+                onClick={() => navigate(`/payment/${game.id}`)}
+              >
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Beli Sekarang
               </Button>

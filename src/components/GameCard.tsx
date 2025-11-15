@@ -99,7 +99,15 @@ const GameCard = ({ id, title, price, image, rating, genre, slug }: GameCardProp
           {title}
         </h3>
         
-        <Button variant="hero" size="sm" className="w-full h-7 md:h-8 text-[10px] md:text-xs px-2">
+        <Button 
+          variant="hero" 
+          size="sm" 
+          className="w-full h-7 md:h-8 text-[10px] md:text-xs px-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/payment/${id}`);
+          }}
+        >
           <ShoppingCart className="h-3 w-3 md:h-4 md:w-4" />
           <span className="hidden md:inline">Beli Sekarang</span>
           <span className="md:hidden">Beli</span>

@@ -10,6 +10,7 @@ import Wishlist from "./pages/Wishlist";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import GameDetail from "./pages/GameDetail";
+import Payment from "./pages/Payment";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/game/:slug" element={<GameDetail />} />
+            <Route path="/payment/:gameId" element={<Payment />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -92,7 +92,17 @@ const Auth = () => {
 
       if (error) throw error;
     } catch (error: any) {
-      toast.error(error.message || "Gagal login dengan Google");
+      let errorMessage = "Gagal login dengan Google";
+      
+      // Berikan pesan error yang lebih informatif
+      if (error?.message?.includes("provider is not enabled") || 
+          error?.error_code === "validation_failed") {
+        errorMessage = "Google login belum diaktifkan. Silakan aktifkan di Supabase Dashboard > Authentication > Providers";
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       setGoogleLoading(false);
     }
   };
