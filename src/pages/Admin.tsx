@@ -635,7 +635,9 @@ const Admin = () => {
                             .eq("id", game.id);
                           
                           if (error) {
-                            toast.error("Gagal mengupdate banner");
+                            console.error("Error updating banner:", error);
+                            const errorMsg = error.message || "Kolom is_featured dan featured_order belum ada di database. Silakan jalankan migration SQL terlebih dahulu (lihat file MIGRATION_BANNER_FEATURED.md)";
+                            toast.error(`Gagal mengupdate banner: ${errorMsg}`);
                           } else {
                             toast.success(e.target.checked ? "Game ditambahkan ke banner" : "Game dihapus dari banner");
                             loadGames();
