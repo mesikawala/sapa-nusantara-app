@@ -114,7 +114,14 @@ const Admin = () => {
       .from("games")
       .select("*, categories(name)")
       .order("created_at", { ascending: false });
-    if (data) setGames(data);
+    if (data) {
+      // Include is_featured and featured_order fields
+      setGames(data.map(game => ({
+        ...game,
+        is_featured: (game as any).is_featured || false,
+        featured_order: (game as any).featured_order || null
+      })));
+    }
   };
 
   const handleAddCategory = async (e: React.FormEvent) => {
@@ -587,6 +594,88 @@ const Admin = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Banner Games Management */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Kelola Game Banner</CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              Pilih game yang akan ditampilkan di banner carousel dan atur urutannya
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {games.map((game) => (
+                <div key={game.id} className="flex items-center gap-4 p-3 border rounded">
+                  <div className="flex items-center gap-3 flex-1">
+                    <img 
+                      src={game.image_url} 
+                      alt={game.title}
+                      className="w-16 h-16 object-cover rounded-md"
+                    />
+                    <div className="flex-1">
+                      <div className="font-bold">{game.title}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {game.genre} • {game.price}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={(game as any).is_featured || false}
+                        onChange={async (e) => {
+                          const { error } = await supabase
+                            .from("games")
+                            .update({ 
+                              is_featured: e.target.checked,
+                              featured_order: e.target.checked ? ((game as any).featured_order || 0) : null
+                            })
+                            .eq("id", game.id);
+                          
+                          if (error) {
+                            toast.error("Gagal mengupdate banner");
+                          } else {
+                            toast.success(e.target.checked ? "Game ditambahkan ke banner" : "Game dihapus dari banner");
+                            loadGames();
+                          }
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <Label className="text-sm cursor-pointer">Featured</Label>
+                    </div>
+                    {(game as any).is_featured && (
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm">Urutan:</Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={(game as any).featured_order || ""}
+                          onChange={async (e) => {
+                            const order = parseInt(e.target.value) || null;
+                            const { error } = await supabase
+                              .from("games")
+                              .update({ featured_order: order })
+                              .eq("id", game.id);
+                            
+                            if (error) {
+                              toast.error("Gagal mengupdate urutan");
+                            } else {
+                              loadGames();
+                            }
+                          }}
+                          className="w-20"
+                          placeholder="0"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Games List */}
         <Card>
