@@ -25,20 +25,15 @@ const DiscountBanner = () => {
 
   const loadFeaturedGames = async () => {
     try {
+      // Query games tanpa filter is_featured untuk sementara (sampai kolom ditambahkan)
       const { data, error } = await supabase
         .from("games")
         .select("id, title, slug, price, image_url, genre")
-        .eq("is_featured", true)
-        .order("featured_order", { ascending: true, nullsFirst: false });
+        .limit(5);
 
       if (error) {
-        // Jika kolom belum ada, skip error dan return empty array
-        if (error.code === '42703' || error.message?.includes('does not exist') || error.message?.includes('column')) {
-          console.warn("Kolom is_featured atau featured_order belum ada. Pastikan sudah menjalankan migration SQL.");
-          setFeaturedGames([]);
-          return;
-        }
         console.error("Error loading featured games:", error);
+        setFeaturedGames([]);
         return;
       }
 

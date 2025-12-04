@@ -620,58 +620,16 @@ const Admin = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={(game as any).is_featured || false}
-                        onChange={async (e) => {
-                          const { error } = await supabase
-                            .from("games")
-                            .update({ 
-                              is_featured: e.target.checked,
-                              featured_order: e.target.checked ? ((game as any).featured_order || 0) : null
-                            })
-                            .eq("id", game.id);
-                          
-                          if (error) {
-                            console.error("Error updating banner:", error);
-                            const errorMsg = error.message || "Kolom is_featured dan featured_order belum ada di database. Silakan jalankan migration SQL terlebih dahulu (lihat file MIGRATION_BANNER_FEATURED.md)";
-                            toast.error(`Gagal mengupdate banner: ${errorMsg}`);
-                          } else {
-                            toast.success(e.target.checked ? "Game ditambahkan ke banner" : "Game dihapus dari banner");
-                            loadGames();
-                          }
-                        }}
-                        className="h-4 w-4"
-                      />
-                      <Label className="text-sm cursor-pointer">Featured</Label>
-                    </div>
-                    {(game as any).is_featured && (
-                      <div className="flex items-center gap-2">
-                        <Label className="text-sm">Urutan:</Label>
-                        <Input
-                          type="number"
-                          min="1"
-                          value={(game as any).featured_order || ""}
-                          onChange={async (e) => {
-                            const order = parseInt(e.target.value) || null;
-                            const { error } = await supabase
-                              .from("games")
-                              .update({ featured_order: order })
-                              .eq("id", game.id);
-                            
-                            if (error) {
-                              toast.error("Gagal mengupdate urutan");
-                            } else {
-                              loadGames();
-                            }
-                          }}
-                          className="w-20"
-                          placeholder="0"
-                        />
-                      </div>
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        toast.info("Gunakan form di atas untuk edit game");
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
